@@ -1,0 +1,71 @@
+mixins:
+- arm
+- exec
+
+name: cnab-bicep
+version: 0.1.0
+tag: nobun.azurecr.io/cnab-bicep
+
+# If you want to customize the Dockerfile in use, uncomment the line below and update the referenced file. 
+# See https://porter.sh/custom-dockerfile/
+dockerfile: Dockerfile.tmpl
+
+install:
+- exec:
+    description: Build Bicep templates
+    command: ./helpers.sh
+    arguments:
+      - build
+- arm:
+    description: Deploy compiled template
+    type: arm
+    template: bicep/vm.json
+    name: bicep
+    resourceGroup: "{{ bundle.parameters.resource-group }}"
+    parameters:
+      adminUsername: "{{ bundle.parameters.adminUsername }}"
+      adminPasswordOrKey: "{{ bundle.parameters.adminPasswordOrKey }}"
+      location: "{{ bundle.parameters.azure-location }}"
+
+upgrade:
+- exec:
+    description: "Upgrade cnab-bicep"
+    command: ./helpers.sh
+    arguments:
+      - upgrade
+
+uninstall:
+- exec:
+    description: "Uninstall cnab-bicep"
+    command: ./helpers.sh
+    arguments:
+      - uninstall
+
+credentials:
+- name: SUBSCRIPTION_ID
+  env: AZURE_SUBSCRIPTION_ID
+- name: CLIENT_ID
+  env: AZURE_CLIENT_ID
+- name: TENANT_ID
+  env: AZURE_TENANT_ID
+- name: CLIENT_SECRET
+  env: AZURE_CLIENT_SECRET
+
+parameters:
+- name: resource-group
+  type: string
+  default: cnab-bicep
+
+- name: adminUsername
+  type: string
+  default: azureuser
+  
+- name: adminPasswordOrKey
+  type: string
+  default: Password#1234
+  sensitive: true
+
+- name: azure-location
+  type: string
+  default: westus2
+  env: AZURE_LOCATION
